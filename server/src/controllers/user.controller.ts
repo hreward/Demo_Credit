@@ -1,92 +1,126 @@
 import { Response, Request, NextFunction } from "express";
 import { User } from "../models/User.Model";
-import { checkRequiredParam } from "../helper";
 import { randomUUID } from "crypto";
 import { Wallet } from "../models/Wallet.Model";
+import { Auth } from "../models/Auth.Model";
 
 
 export class UserController{
     // Create a new user
     public static async createUser (req: Request, res: Response, next:NextFunction): Promise<void> {
-        checkRequiredParam("email")(req, res, next);
-        checkRequiredParam("password")(req, res, next);
-        checkRequiredParam("firstname")(req, res, next);
-        checkRequiredParam("lastname")(req, res, next);
+        // Check missing params
+        let missingParam:boolean = false;
+        let errmsg:string = "";
+        if(req.body.firstname === undefined || req.body.firstname < 2){
+            missingParam = true;
+            errmsg = "firstname is missing or too short";
+        } else if(req.body.lastname === undefined || req.body.lastname < 2){
+            missingParam = true;
+            errmsg = "lastname is missing or too short";
+        } else if(req.body.email === undefined || req.body.email < 2){
+            missingParam = true;
+            errmsg = "email is missing or too short";
+        } else if(req.body.password === undefined || req.body.password < 2){
+            missingParam = true;
+            errmsg = "password is missing or too short";
+        }
+
+        // Return error if there is a missing param
+        if(missingParam === true){
+            res.status(400).json({
+                status: "error",
+                success: false,
+                message: errmsg
+            });
+            return;
+        }
+
+
         try {
             const { firstname, lastname, email, password } = req.body;
             const user = new User(randomUUID().replace("-","").slice(0, 10), firstname, lastname, email, password);
             const wallet = new Wallet(randomUUID().replace("-","").slice(0, 10), user.id, 0);
+            await user.setPassword(password);
             await user.save();
             await wallet.save();
             res.status(201).json({
                 status: true,
                 success: true,
                 message: "User created successfully",
-                data: user
+                data: {'firstname': user.firstName, "lastname": user.lastName, "email": user.email, "createdAt": user.createdAt, "updatedAt": user.updatedAt}
             });
+            return;
         } catch (error) {
             res.status(400).json({
                 status: true,
                 success: false,
                 message: error.message,
             });
+            return;
         }
     };
 
     // Update a user details
     public static async updateUser (req: Request, res: Response): Promise<void> {
     try {
-        const id = req.params.id;
-        const { firstname, lastname, password } = req.body;
-        // TODO get email from session
-        var email = "gottenFromSession";
-        const user = User.findByEmail(email);
-        if (!user) throw new Error("User not found");
+        if(req.headers.authorization === undefined || req.headers.authorization.length < 2){
+            res.status(401).json({status: "error", success: false, message: "Unauthorized request"});
+            return;
+        }
+        let token: string = req.headers.authorization.replace("Bearer ","");
+        const user = await Auth.getUserbyToken(token); 
 
-        if(firstname && firstname.length > 0){
-            (await user).firstName = firstname;
+        if(req.body.firstname && req.body.firstname.length > 2){
+            user.firstName = req.body.firstname;
         }
-        if(lastname && lastname.length > 0){
-            (await user).lastName = lastname;
+        if(req.body.lastname && req.body.lastname.length > 2){
+            user.lastName = req.body.lastname;
         }
-        if(password && password.length > 0){
-            (await user).setPassword(password);
+        if(req.body.password && req.body.password.length > 2){
+            await user.setPassword(req.body.password);
         }
-        await (await user).save();
+        await user.save();
 
         res.status(200).json({
             status: true,
             success: true,
             message: "User updated successfully",
+            data: {'firstname': user.firstName, "lastname": user.lastName, "email": user.email, "createdAt": user.createdAt, "updatedAt": user.updatedAt}
         });
+        return;
     } catch (error) {
         res.status(400).json({
             status: true,
             success: false,
             message: error.message,
         });
+        return;
     }
     };
 
     // delete a user
     public static async deleteUser (req: Request, res: Response): Promise<void> {
-    try {
-        // TODO get email from session
-        const email = req.params.email;
-        const user = await User.findByEmail(email);
-        if (!user) throw new Error("User not found");
-        res.status(204).json({
-            status: true,
-            success: true,
-            message: "User deleted successfully"
-        });
-    } catch (error) {
-        res.status(400).json({
-            status: true,
-            success: false,
-            message: error.message,
-        });
-    }
+        try {
+            if(req.headers.authorization === undefined || req.headers.authorization.length < 2){
+                res.status(401).json({status: "error", success: false, message: "Unauthorized request"});
+                return;
+            }
+            let token: string = req.headers.authorization.replace("Bearer ","");
+            const user = await Auth.getUserbyToken(token); 
+            await user.delete();
+            res.status(204).json({
+                status: true,
+                success: true,
+                message: "User deleted successfully"
+            });
+            return;
+        } catch (error) {
+            res.status(400).json({
+                status: true,
+                success: false,
+                message: error.message,
+            });
+            return;
+        }
     };
-
 }

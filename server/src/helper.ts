@@ -4,21 +4,6 @@ const { combine, timestamp, label, prettyPrint, printf, json } = format;
 require('winston-daily-rotate-file');
 
 
-export const checkRequiredParam = (paramName: string) => (
-	req: Request,
-	res: Response,
-	next: NextFunction
-) => {
-	const param = req.body[paramName];
-	if (!param) {
-		return res.status(400).json({
-		message: `${paramName} parameter is required`,
-		});
-	}
-	next();
-};
-
-
 // //////////////////////////////////////////////
 // `M.`MMMm                 ,M' .M.    MMMMMMM MMMMMMMMM
 //  `M.`MMMm               ,M' .MMM.   MMMMMMM MMMMMMMMM

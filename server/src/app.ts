@@ -1,11 +1,12 @@
 // const express = require('express');
 import express from "express";
 import cors from "cors";
-import session from "express-session";
 
-import { router as AuthRouter } from "./routes/auth.router";
-import { router as UserRouter } from "./routes/user.router";
-import { router as CoopRouter } from "./routes/coop.router";
+import AuthRouter from "./routes/auth.router";
+import UserRouter from "./routes/user.router";
+import WalletRouter from "./routes/wallet.router";
+import TransactionRouter from "./routes/transaction.router";
+import LoanRouter from "./routes/loan.router";
 
 export let mapp = express();
 
@@ -36,31 +37,8 @@ mapp.use(express.json());
 // 	});
 // });
 
-// mapp.use(session({
-// 	secret: "ypooc-aa",
-// 	resave: false,
-// 	saveUninitialized: true,
-// 	cookie: {expires: new Date("2023-05-02")},
-// 	name: "user"
-// }));
-
-// mapp.use((request, response, next)=>{
-// 	saveSession(request.session);
-// 	next();
-// });
-
-//setting user for this request
-// mapp.use((request, response, next)=>{
-// 	//mask api key
-// 	let maskedapi = request.headers.authorization.split("-", 2)[1];
-// 	maskedapi = `${maskedapi.substr(0,4)}********${maskedapi.substr(-4)}`
-// 	setUser(`${bus_details.name} - ${bus_details.bid} - ${maskedapi}`);
-// 	next();
-// });
-
 mapp.use("/auth", AuthRouter);
-mapp.use("/user", UserRouter);
-mapp.use(express.urlencoded({
-    extended: true,
-}));
-mapp.use("/coop", CoopRouter);
+mapp.use("/users", UserRouter);
+mapp.use("/wallets", WalletRouter);
+mapp.use("/transactions", TransactionRouter);
+mapp.use("/loans", LoanRouter);

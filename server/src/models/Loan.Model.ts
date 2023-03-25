@@ -1,4 +1,4 @@
-import knex from 'knex';
+import { knex } from './db.model';
 
 // Define the Loan class
 export class Loan {
@@ -9,14 +9,15 @@ export class Loan {
     private _createdAt: Date;
     private _updatedAt: Date;
 
-    constructor(reference: string, userId: string, amount: number, status: string, createdAt?: Date, updatedAt?: Date) {
+    constructor(reference: string, userId: string, amount: number, status: string, createdAt = new Date(), updatedAt = new Date()) {
         this._reference = reference;
         this._userId = userId;
         this._amount = amount;
         this._status = status;
 
-        if(createdAt === null) this._createdAt = new Date(); else this._createdAt = createdAt;
-        if(updatedAt === null) this._updatedAt = new Date(); else this._updatedAt = updatedAt;
+        // if(createdAt === undefined) this._createdAt = new Date(); else this._createdAt = createdAt;
+        this._createdAt = createdAt;
+        this._updatedAt = updatedAt;
     }
 
     // Getters and setters for private properties
@@ -57,28 +58,36 @@ export class Loan {
     }
 
     // Database queries
-    static async findById(id: string): Promise<Loan> {
-        const loan = await knex('loans').where({ id }).first();
+    static async findById(reference: string): Promise<Loan> {
+        const loan = await knex('loans').where({ reference }).first().catch(
+			(error)=>{throw new Error("internal error");}
+		);
         if (!loan) {
-            throw new Error(`Loan with ID ${id} not found`);
+            throw new Error(`Loan with ID ${reference} not found`);
         }
-        return new Loan(loan.id, loan.userId, loan.amount, loan.status, loan.createdAt, loan.updatedAt);
+        return new Loan(loan.reference, loan.userId, loan.amount, loan.status, loan.createdAt, loan.updatedAt);
     }
 
     static async findByUserId(userId: string): Promise<Loan[]> {
-        const loans = await knex('loans').where({ userId });
-        return loans.map((loan: any) => new Loan(loan.id, loan.userId, loan.amount, loan.status, loan.createdAt, loan.updatedAt));
+        const loans = await knex('loans').where({ userId }).catch(
+			(error)=>{throw new Error("internal error");}
+		);
+        return loans.map((loan: any) => new Loan(loan.reference, loan.userId, loan.amount, loan.status, loan.createdAt, loan.updatedAt));
     }
 
     async save(): Promise<void> {
-        const existingLoan = await knex('loans').where({ reference: this.reference }).first();
+        const existingLoan = await knex('loans').where({ reference: this.reference }).first().catch(
+			(error)=>{throw new Error("internal error");}
+		);
         if (existingLoan && existingLoan.reference == this.reference) {
-            await knex('loans').where({ id: this.reference }).update({
+            await knex('loans').where({ reference: this.reference }).update({
                 userId: this.userId,
                 amount: this.amount,
                 status: this.status,
                 updatedAt: new Date(),
-            });
+            }).catch(
+                (error)=>{throw new Error("internal error");}
+            );
         } else {
             const result = await knex('loans').insert({
                 userId: this.userId,
@@ -86,7 +95,9 @@ export class Loan {
                 status: this.status,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-            });
+            }).catch(
+                (error)=>{throw new Error("internal error");}
+            );
         }
     }
 }

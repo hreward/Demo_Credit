@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import knex from 'knex';
+import { knex } from './db.model';
 
 export class Transaction {
 	private _reference: string;
@@ -8,13 +8,13 @@ export class Transaction {
 	private _amount: number;
 	private _createdAt: Date;
 
-	constructor(reference: string, fromUserId: string, toUserId: string, amount: number, createdAt?: Date) {
+	constructor(reference: string, fromUserId: string, toUserId: string, amount: number, createdAt = new Date()) {
 		this._reference = reference;
 		this._fromUserId = fromUserId;
 		this._toUserId = toUserId;
 		this._amount = amount;
 
-		if(createdAt === null) this._createdAt = new Date(); else this._createdAt = createdAt;
+		this._createdAt = createdAt;
 	}
 
 	// Getters and setters
@@ -54,20 +54,23 @@ export class Transaction {
 	static async create(fromUserId: string, toUserId: string, amount: number, description?: string): Promise<Transaction> {
 		
 		const reference:string = randomUUID().replace("-", "");
-			const result = await knex('transactions').insert({
-				reference,
-				fromUserId,
-				toUserId,
-				amount,
-				description,
-				createdAt: new Date(),
-			});
-			return new Transaction(reference, fromUserId, toUserId, amount, new Date());
-		
+		const result = await knex('transactions').insert({
+			reference,
+			fromUserId,
+			toUserId,
+			amount,
+			description,
+			createdAt: new Date(),
+		}).catch(
+			(error)=>{throw new Error("internal error");}
+		);
+		return new Transaction(reference, fromUserId, toUserId, amount, new Date());
 	}
 	
 	static async findAllByUserId(userId: string): Promise<Transaction[]> {
-		const transactions = await knex('transactions').where('fromUserId', userId).orWhere('toUserId', userId).orderBy('createdAt', 'desc');
+		const transactions = await knex('transactions').where({fromUserId: userId}).orWhere({toUserId: userId}).orderBy('createdAt', 'desc').catch(
+			(error)=>{throw new Error("internal error"+error);}
+		);
 		return transactions.map((transaction: any) => {
 			return new Transaction(transaction.reference, transaction.fromUserId, transaction.toUserId, transaction.amount, transaction.createdAt);
 		});
@@ -75,7 +78,12 @@ export class Transaction {
 	}
 	
 	static async findTransactionByUserId(tranxId:string, userId: string): Promise<Transaction> {
-		const transaction = await knex('transactions').where('fromUserId', userId).orWhere('toUserId', userId).andWhere('reference', tranxId).first();
+		const transaction = await knex('transactions').where('reference', tranxId).where('fromUserId', userId).orWhere('toUserId', userId).andWhere('reference', tranxId).first().catch(
+			(error)=>{throw new Error("internal error");}
+		);
+		if(!transaction){
+			throw new Error("Transaction not found");
+		}
 		return new Transaction(transaction.reference, transaction.fromUserId, transaction.toUserId, transaction.amount, transaction.createdAt);
 		
 	}
