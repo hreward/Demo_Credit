@@ -2,7 +2,7 @@ import { Auth } from "../models/Auth.Model";
 import { User } from "../models/User.Model";
 import { Transaction } from "../models/Transaction.Model";
 import { randomUUID } from "crypto";
-import { TransactionController } from "../../dist/src/controllers/transaction.controller";
+import { TransactionController } from "./transaction.controller";
 
 describe("Transactioon controller", ()=>{
     describe("getUserTransaction", ()=>{
@@ -19,7 +19,7 @@ describe("Transactioon controller", ()=>{
             // Variables
             const res: any = {
                 status: jest.fn().mockReturnThis(),
-                json: jest.fn(),
+                json: jest.fn(), 
             };
     
             jest.spyOn(Auth, 'getUserbyToken').mockResolvedValue(user);
