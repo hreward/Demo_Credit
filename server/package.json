@@ -5,8 +5,9 @@
   "main": "src/server.ts",
   "scripts": {
     "test": "jest",
-    "watch": "nodemon --trace-uncaught dist/src/server.js",
-    "start": "tsc --watch&& node dist/src/server.js"
+    "watch": "tsc --watch",
+    "start": "tsc",
+    "build": "tsc"
   },
   "keywords": [
     "lendsqr"
