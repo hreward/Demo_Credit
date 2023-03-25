@@ -25,6 +25,3 @@ jobs:
     - name: Build TypeScript
       run: npm run build
       working-directory: ./server
-      
-    - name: Print dist directory
-      run: ls -R ./dist
