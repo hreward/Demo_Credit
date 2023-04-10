@@ -18,12 +18,6 @@ require('winston-daily-rotate-file');
 
 //flw keys
 /*
-const flwkeys = {
-	FLW_PUBLIC_KEY: "FLWPUBK_TEST-521f69e6532c0dfdfb48adddd876e21b-X",
-	FLW_SECRET_KEY: "FLWSECK_TEST-a0a4ec03b5b6de01ae499be5802775c3-X",
-	// FLW_SECRET_KEY: "FLWSECK-04fb62947f4ccd293d27bfc0986475ec-X"
-}
-
 const transport = new transports.DailyRotateFile({
 	filename: 'app-%DATE%.jlog',
 	dirname:'./logs',
